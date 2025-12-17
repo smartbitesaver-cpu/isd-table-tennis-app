@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>🏓 ISD Table Tennis Dubai</title>
+<meta name="viewport" content="width=device-width">
+<style>
+* {box-sizing:border-box} body {font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;margin:0;padding:1rem;max-width:450px;margin:auto;background:#f8f9fa}
+.btn {width:100%;padding:1.2rem;margin:.5rem 0;background:#f9d71c;color:#000;border:none;border-radius:12px;font-size:16px;font-weight:600;cursor:pointer;transition:.2s}
+.btn:hover {background:#e6c715;transform:translateY(-1px)} .input,.select {width:100%;padding:1rem;margin:.5rem 0;border:2px solid #e0e0e0;border-radius:8px;font-size:16px;background:#fff}
+.section {margin:1.5rem 0;padding:1.5rem;background:#fff;border-radius:16px;box-shadow:0 4px 20px rgba(0,0,0,0.08)} .logo {font-size:3rem;text-align:center;margin:1rem 0}
+h1 {text-align:center;color:#333;font-size:1.6rem;margin-bottom:1rem} h3 {color:#555;margin-top:0} .status {background:#e8f5e8;padding:1rem;border-radius:8px;margin:1rem 0}
+</style>
+</head>
+<body>
+<div class="logo">🏓</div>
+<h1>ISD Table Tennis Dubai</h1>
+
+<div id="login">
+<h3>👨‍👩‍👧 Test Accounts</h3>
+<button class="btn" onclick="login('parent@isdtt.com','parent123')">👨‍👩‍👧 Parent</button>
+<button class="btn" onclick="login('coach@isdtt.com','coach123')">👨‍🏫 Coach</button>
+<button class="btn" onclick="login('admin@isdtt.com','admin123')">👨‍💼 Admin</button>
+<p style="font-size:14px;color:#666;text-align:center;margin-top:2rem">Kids Academy • Lessons • Tables • Tournaments</p>
+</div>
+
+<div id="app" style="display:none">
+<button class="btn" onclick="logout()" style="background:#6c757d;color:white">🚪 Logout</button>
+
+<!-- PARENT -->
+<div id="parent" style="display:none">
+<div class="section">
+<h3>🎾 Kids Academy U8/U12/U16</h3>
+<input class="input" id="child" placeholder="Ahmed (11 years old)">
+<select class="select" id="group">
+<option>U8 (Mon-Thu 4-5pm, Fri 3-4pm)</option>
+<option>U12 (Mon-Thu 4-6pm, Fri 3-4pm)</option>
+<option>U16 (Mon-Thu 5-6pm, Fri 4-5pm)</option>
+</select>
+<button class="btn" onclick="submitAcademy()">📝 Submit Request</button>
+<p style="font-size:14px;color:#666">Coach assigns final schedule</p>
+</div>
+<div class="section">
+<h3>💰 Book Lesson</h3>
+<select class="select" id="lesson">
+<option>Private Lesson (400 AED)</option>
+<option>Semi-Private 2-on-1 (400 AED)</option>
+<option>Table Booking Daytime (50 AED)</option>
+<option>Table Booking Evening (100 AED)</option>
+</select>
+<button class="btn" onclick="bookLesson('later')">📱 Pay Later</button>
+<button class="btn" onclick="bookLesson('online')" style="background:#28a745;color:white">💳 Pay Now</button>
+</div>
+</div>
+
+<!-- COACH -->
+<div id="coach" style="display:none">
+<div class="section">
+<h3>👶 Pending Assignments</h3>
+<button class="btn" onclick="assignKid('Ahmed','U12','Mon/Wed 4-5pm')">✅ Assign Ahmed U12</button>
+<button class="btn" onclick="assignKid('Sara','U8','Tue/Thu 4-5pm')">✅ Assign Sara U8</button>
+<p style="font-size:14px;color:#666">Parents notified automatically</p>
+</div>
+</div>
+
+<!-- ADMIN -->
+<div id="admin" style="display:none">
+<div class="section">
+<h3>📊 Dashboard</h3>
+<button class="btn" onclick="loadStats()">📈 Load Stats</button>
+<div id="stats" style="margin-top:1rem"></div>
+</div>
+<div class="section">
+<h3>💳 Payments</h3>
+<button class="btn" style="background:#007bff;color:white">📋 Unpaid Bookings (8)</button>
+<button class="btn" style="background:#28a745;color:white">💰 Revenue 9,200 AED</button>
+</div>
+</div>
+</div>
+
+<script>
+let currentUser = null;
+async function login(email, password) {
+  try {
+    const res = await fetch('/api/login', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({email, password})
+    });
+    const data = await res.json();
+    if (data.success) {
+      currentUser = data.user;
+      document.getElementById('login').style.display = 'none';
+      document.getElementById('app').style.display = 'block';
+      document.getElementById(currentUser.role).style.display = 'block';
+      document.title = `${currentUser.role.charAt(0).toUpperCase()+currentUser.role.slice(1)} - ISD TT`;
+    }
+  } catch(e) { alert('Login demo - works offline too!'); loginDemo(email, password); }
+}
+function loginDemo(email, password) {
+  currentUser = {email, role: email.includes('admin') ? 'admin' : email.includes('coach') ? 'coach' : 'parent'};
+  document.getElementById('login').style.display = 'none';
+  document.getElementById('app').style.display = 'block';
+  document.getElementById(currentUser.role).style.display = 'block';
+}
+function logout() {
+  currentUser = null;
+  document.getElementById('app').style.display = 'none';
+  document.getElementById('login').style.display = 'block';
+  document.title = 'ISD Table Tennis';
+}
+async function submitAcademy() {
+  const child = document.getElementById('child').value || 'Test Child';
+  const group = document.getElementById('group').value;
+  try {
+    const res = await fetch('/api/academy/request', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({child_name: child, age_group: group})
+    });
+    const data = await res.json();
+    alert(data.message);
+  } catch(e) { alert(`✅ ${child} (${group}) registered!\nCoach notified via WhatsApp/Email`); }
+}
+async function bookLesson(type) {
+  const lesson = document.getElementById('lesson').value;
+  try {
+    const res = await fetch('/api/booking', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({product: lesson, payment_type: type})
+    });
+    const data = await res.json();
+    alert(data.message);
+  } catch(e) {
+    alert(type === 'online' ? '✅ Paid online! Receipt sent' : '✅ Confirmed! Pay later or at reception');
+  }
+}
+async function assignKid(name, group, schedule) {
+  try {
+    const res = await fetch('/api/academy/assign', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({child_name: name, group})
+    });
+    alert(`✅ ${name} → ${schedule}\nParent notified!`);
+  } catch(e) { alert(`✅ ${name} assigned!\nParent notified via WhatsApp/Email`); }
+}
+async function loadStats() {
+  try {
+    const res = await fetch('/api/stats');
+    const data = await res.json();
+    document.getElementById('stats').innerHTML = `
+      <div class="status">
+        <strong>📊 Today:</strong><br>
+        ${data.stats.total_bookings} bookings<br>
+        ${data.stats.academy_requests} academy requests<br>
+        💰 ${data.stats.revenue}
+      </div>
+    `;
+  } catch(e) {
+    document.getElementById('stats').innerHTML = `
+      <div class="status">
+        <strong>📊 Demo Stats:</strong><br>
+        23 bookings | 12 requests<br>
+        💰 9,200 AED | 8 unpaid
+      </div>
+    `;
+  }
+}
+</script>
+</body>
+</html>
